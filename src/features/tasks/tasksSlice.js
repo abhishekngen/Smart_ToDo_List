@@ -1,17 +1,26 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { taskStatus } from './taskStatus';
 
-const initialState = {
-  tasks: [{
-    id: Date.now(), // Will generate using API DB call
-    title: 'A Task!',
-    description: '',
-    category: 'General',
-    deadline: new Date().toLocaleDateString('en-GB'),
-    status: taskStatus.ToDo
-  }]
-};
+export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
+  const response = await fetch('http://localhost:4000/tasks');
+  console.log(response);
+  const json = await response.json();
+  return json;
+});
 
+const initialState = {
+  tasks: [],
+  isLoading: false,
+  hasError: false
+};
+// {
+//   id: Date.now(), // Will generate using API DB call
+//   title: 'A Task!',
+//   description: '',
+//   category: 'General',
+//   deadline: new Date().toLocaleDateString('en-GB'),
+//   status: taskStatus.ToDo
+// }
 const tasksSlice = createSlice({
     name: 'tasks',
     initialState: initialState,
@@ -25,6 +34,22 @@ const tasksSlice = createSlice({
         updateTask: (state, action) => {
           state.tasks.find(task => task.id === action.payload.task.id).status = action.payload.newStatus;
         }
+    },
+    extraReducers: {
+      [fetchTasks.pending]: (state, action) => {
+        state.isLoading = true;
+        state.hasError = false;
+      },
+      [fetchTasks.fulfilled]: (state, action) => {
+        console.log(action.payload);
+        state.tasks = action.payload;
+        state.isLoading = false;
+        state.hasError = false;
+      },
+      [fetchTasks.rejected]: (state, action) => {
+        state.isLoading = false;
+        state.hasError = true;
+      }
     }
 });
 
